@@ -1,0 +1,43 @@
+tosca_definitions_version: cloudify_dsl_1_3
+
+imports:
+  - https://cloudify.co/spec/cloudify/6.3.0/types.yaml
+  - plugin:cloudify-utilities-plugin
+
+inputs:
+  token:
+    type: string
+
+  secret_name:
+    type: string
+
+  secret_data:
+    type: dict
+
+  vault_host:
+    type: string
+
+
+node_templates:
+  vault:
+    type: cloudify.rest.Requests
+    properties:
+      hosts: [{get_input: vault_host }]
+      port: 443
+      ssl: true
+      verify: true
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        create:
+          inputs:
+            template_file: templates/vault_create_secret.yaml.j2
+            prerender: true
+            params: &params
+              secret_name: { get_input: secret_name }
+              secret_data: { get_input: secret_data }
+              token: { get_input: token }
+        delete:
+          inputs:
+            template_file: templates/vault_delete_secret.yaml.j2
+            prerender: true
+            params: *params
